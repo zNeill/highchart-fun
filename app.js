@@ -88,6 +88,8 @@ let selectedEventType1 = barChartEvents[0];
 
 buildPieChart(selectedEventType1);
 buildShipSeverityData(selectedEventType1);
+buildLocationPieChart(selectedEventType1);
+
 
 /////////////////////////////
 //     Chart Updater       //
@@ -99,6 +101,7 @@ function updateSubCharts(category) {
   // let isUpdate = true;
   buildPieChart(selectedEventType1); //, isUpdate);
   buildShipSeverityData(selectedEventType1);
+  buildLocationPieChart(selectedEventType1);
 }
 
 //////////////////////////
@@ -125,6 +128,9 @@ var chartA = Highcharts.chart('chart-a', {
     title: {
       text: 'Number of Events'
     }
+  },
+  credits: {
+    enabled: false
   },
   navigation: {
     buttonOptions: {
@@ -182,74 +188,77 @@ function buildPieChart(selectedEventType1) //add update as third param if disabl
 
   // uncomment disable "always animating"
   // if(!update) { 
-    chartB = Highcharts.chart('chart-b', {
-      chart: {
-        type: 'pie'
-      },
+  chartB = Highcharts.chart('chart-b', {
+    chart: {
+      type: 'pie'
+    },
+    title: {
+      text: pieTitle
+    },
+    yAxis: {
       title: {
-        text: pieTitle
-      },
-      yAxis: {
-        title: {
-          text: 'events'
-        }
-      },
-      plotOptions: {
-        pie: {
-          shadow: false,
-          center: ['50%', '50%']
-        }
-      },
-      navigation: {
-        buttonOptions: {
-          enabled: false
-        }
-      },
-      tooltip: {
-        valueSuffix: '%'
-      },
-      series: [{
-        name: 'Event Type 2',
-        data: et2Data,
-        size: '60%',
-        dataLabels: {
-          formatter: function () {
-            return this.y > 5 ? this.point.name : null;
-          },
-          color: '#ffffff',
-          distance: -30
-        }
-      }, {
-        name: 'Event Type 3',
-        data: et3Data,
-        size: '80%',
-        innerSize: '60%',
-        dataLabels: {
-          formatter: function () {
-            // display only if larger than 1
-            return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
-              this.y + '%' : null;
-          }
-        },
-        id: 'versions'
-      }],
-      responsive: {
-        rules: [{
-          condition: {
-            maxWidth: 500,
-          },
-          chartOptions: {
-            series: [{
-              id: 'versions',
-              dataLabels: {
-                enabled: false
-              }
-            }]
-          }
-        }]
+        text: 'events'
       }
-    });
- 
+    },
+    plotOptions: {
+      pie: {
+        shadow: false,
+        center: ['50%', '50%']
+      }
+    },
+    navigation: {
+      buttonOptions: {
+        enabled: false
+      }
+    },
+    credits: {
+      enabled: false
+    },
+    tooltip: {
+      valueSuffix: '%'
+    },
+    series: [{
+      name: 'Event Type 2',
+      data: et2Data,
+      size: '60%',
+      dataLabels: {
+        formatter: function () {
+          return this.y > 5 ? this.point.name : null;
+        },
+        color: '#ffffff',
+        distance: -30
+      }
+    }, {
+      name: 'Event Type 3',
+      data: et3Data,
+      size: '80%',
+      innerSize: '60%',
+      dataLabels: {
+        formatter: function () {
+          // display only if larger than 1
+          return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
+            this.y + '%' : null;
+        }
+      },
+      id: 'versions'
+    }],
+    responsive: {
+      rules: [{
+        condition: {
+          maxWidth: 500,
+        },
+        chartOptions: {
+          series: [{
+            id: 'versions',
+            dataLabels: {
+              enabled: false
+            }
+          }]
+        }
+      }]
+    }
+  });
+  
   // DISABLED FUNCTIONALITY FOR SMOOTH (NON ANIMATED) CHART UPDATE
   // } else {
   //   chartB.update({
@@ -319,31 +328,31 @@ function buildShipSeverityData(selectedEventType1) // , update)
   }
 
   var chartC = Highcharts.chart('chart-c', {
-     chart: {
-        type: 'column'
+    chart: {
+      type: 'column'
     },
     title: {
-        text: chartTitle
+      text: chartTitle
     },
     subtitle: {
       text: 'Click on legend to filter by severity'
     },
     xAxis: {
-        categories: shipList
+      categories: shipList
     },
     colors: ["#2e84bf",  "#f7a35c", "#d9534f", "#434348", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"],
     yAxis: {
-        min: 0,
-        title: {
-            text: 'Total number of events'
-        },
-        stackLabels: {
-            enabled: true,
-            style: {
-                fontWeight: 'bold',
-                color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
-            }
+      min: 0,
+      title: {
+        text: 'Total number of events'
+      },
+      stackLabels: {
+        enabled: true,
+        style: {
+          fontWeight: 'bold',
+          color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
         }
+      }
     },
 
     navigation: {
@@ -351,32 +360,96 @@ function buildShipSeverityData(selectedEventType1) // , update)
         enabled: false
       }
     },
+    credits: {
+      enabled: false
+    },
     
     legend: {
-        align: 'right',
-        x: -30,
-        verticalAlign: 'top',
-        y: 40,
-        floating: true,
-        backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || 'white',
-        borderColor: '#CCC',
-        borderWidth: 1,
-        shadow: false
+      align: 'right',
+      x: -30,
+      verticalAlign: 'top',
+      y: 40,
+      floating: true,
+      backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || 'white',
+      borderColor: '#CCC',
+      borderWidth: 1,
+      shadow: false
     },
     tooltip: {
-        headerFormat: '<b>{point.x}</b><br/>',
-        pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+      headerFormat: '<b>{point.x}</b><br/>',
+      pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
     },
     plotOptions: {
-        column: {
-            stacking: 'normal',
-            dataLabels: {
-                enabled: true,
-                color: (Highcharts.theme && Highcharts.theme.dataLabelsColor) || 'white'
-            }
+      column: {
+        stacking: 'normal',
+        dataLabels: {
+          enabled: true,
+          color: (Highcharts.theme && Highcharts.theme.dataLabelsColor) || 'white'
         }
+      }
     },
     series: chartSeries
   });
 }
 
+///////////////////////////////
+// Chart D (Location Pie)    //
+///////////////////////////////
+
+function buildLocationPieChart(selectedEventType1)
+{
+  let locationData = organizeByKey(selectedEventType1.data, 'eventLocation');
+  let chartSeries = [];
+  let chartTitle = selectedEventType1.name + ' locations';
+  for(let i = 0; i < locationData.length; i++)
+  {
+    chartSeries.push({
+      name: locationData[i].name,
+      y: locationData[i].pct
+    });
+  }
+  chartSeries[0].sliced = true;
+  chartSeries[0].selected = true;
+
+  var chartD = Highcharts.chart('chart-d', {
+    chart: {
+      plotBackgroundColor: null,
+      plotBorderWidth: null,
+      plotShadow: false,
+      type: 'pie'
+    },
+    title: {
+      text: chartTitle
+    },
+    subtitle: {
+      text: 'Click legend to enable/disable locations'
+    },
+    tooltip: {
+      pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+    },
+    plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: {
+          enabled: false
+        },
+        showInLegend: true
+      }
+    },
+    colors: colors,
+    navigation: {
+      buttonOptions: {
+        enabled: false
+      }
+    },
+    credits: {
+      enabled: false
+    },
+    series: [{
+      name: 'Brands',
+      colorByPoint: true,
+      data: chartSeries
+    }]
+  });
+}
