@@ -34,7 +34,7 @@ function organizeByKey(obj,key,subkey)
     var newObj = {};
     newObj.name = uArr[i];
     newObj.data = obj.filter(function(elem) {
-                            return elem[key] == uArr[i];
+      return elem[key] == uArr[i];
     });
     newObj.count = newObj.data.length;
     objsTotal += newObj.count;
@@ -69,22 +69,72 @@ function arrayFromKey(obj,key)
   return newArray;
 }
 
+
 /////////////////////////////
 // "Main" (if this were C) //
 /////////////////////////////
 
-let barChartEvents = organizeByKey(srcJSON, 'eventType1', 'eventType2');
-let barChartCategories = arrayFromKey(barChartEvents, 'name');
-let barChartCounts = arrayFromKey(barChartEvents, 'count');
-let selectedPie = barChartEvents[0];
-let pieEvents = organizeByKey(selectedPie.data, 'eventType2', 'eventType3');
 
+// Sorry for global variable pollution, world
+var barChartEvents = organizeByKey(srcJSON, 'eventType1', 'eventType2'),
+    barChartCategories = arrayFromKey(barChartEvents, 'name'),
+    barChartCounts = arrayFromKey(barChartEvents, 'count'),
+    selectedPie = barChartEvents[0],
+    pieEvents = organizeByKey(selectedPie.data, 'eventType2', 'eventType3'),
+    colors = Highcharts.getOptions().colors,
+    brightness,
+    et2Data = [],
+    et3Data = [];
+
+buildPieData();
+
+/////////////////////////////
+//     Chart Updater       //
+/////////////////////////////
+
+function updateSubCharts(category) {
+  console.log('we made it this far with ' + category);
+  var ix = barChartCategories.indexOf(category);
+  selectedPie = barChartEvents[ix];
+  pieEvents = organizeByKey(selectedPie.data, 'eventType2', 'eventType3'),
+  buildPieData();
+  chartB.update({
+    title: {
+      text: category
+    },
+    series: [{
+      name: 'Event Type 2',
+      data: et2Data,
+      size: '60%',
+      dataLabels: {
+        formatter: function () {
+          return this.y > 5 ? this.point.name : null;
+        },
+        color: '#ffffff',
+        distance: -30
+      }
+    }, {
+      name: 'Event Type 3',
+      data: et3Data,
+      size: '80%',
+      innerSize: '60%',
+      dataLabels: {
+        formatter: function () {
+          // display only if larger than 1
+          return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
+            this.y + '%' : null;
+        }
+      },
+      id: 'versions'
+    }],
+  })
+}
 
 //////////////////////////
 // Bar Chart (Chart A)  //
 //////////////////////////
 
-Highcharts.chart('chart-a', { 
+var chartA = Highcharts.chart('chart-a', { 
   chart: {
     type: 'column'
   },
@@ -110,7 +160,12 @@ Highcharts.chart('chart-a', {
   series:
   [{
     name: 'Events',
-    data: barChartCounts
+    data: barChartCounts,
+    events: {
+      click: function(event) {
+        updateSubCharts(event.point.category);
+      }
+    }
   }]});
 
 ////////////////////////////
@@ -118,35 +173,34 @@ Highcharts.chart('chart-a', {
 ////////////////////////////
 
 
-var colors = Highcharts.getOptions().colors,
-    brightness,
-    et2Data = [],
-    et3Data = [];
+function buildPieData()
+{
+  et2Data = [];
+  et3Data = [];
+  // Build the data arrays
+  for (let i = 0; i < pieEvents.length; i++) {
 
-
-// Build the data arrays
-for (let i = 0; i < pieEvents.length; i++) {
-
-  // add browser data
-  et2Data.push({
-    name: pieEvents[i].name,
-    y: round(pieEvents[i].pct, 2),
-    color: colors[i]
-  });
-
-  // add version data
-  for (let j = 0; j < pieEvents[i].subObjects.length; j++) {
-    brightness = 0.2 - (j / pieEvents[i].subObjects.length) / 5;
-    et3Data.push({
-      name: pieEvents[i].subObjects[j].name,
-      y: round(pieEvents[i].subObjects[j].pct, 2),
-      color: Highcharts.Color(colors[i]).brighten(brightness).get()
+    //build tier 2 data (inner pie)
+    et2Data.push({
+      name: pieEvents[i].name,
+      y: round(pieEvents[i].pct, 2),
+      color: colors[i]
     });
+
+    // build tier 3 data (outer pie)
+    for (let j = 0; j < pieEvents[i].subObjects.length; j++) {
+      brightness = 0.2 - (j / pieEvents[i].subObjects.length) / 5;
+      et3Data.push({
+        name: pieEvents[i].subObjects[j].name,
+        y: round(pieEvents[i].subObjects[j].pct, 2),
+        color: Highcharts.Color(colors[i]).brighten(brightness).get()
+      });
+    }
   }
+
 }
 
-
-Highcharts.chart('chart-b', {
+var chartB = Highcharts.chart('chart-b', {
   chart: {
     type: 'pie'
   },
