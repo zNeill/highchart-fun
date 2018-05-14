@@ -1,6 +1,10 @@
 // Ensuring data.js in scope
 // console.log(srcJSON);
 
+// Polyfills needed if not using ES6+ browser
+// array.prototype.findIndex
+// array.prototype.filter
+
 // Function for finding and counting unique values given an
 function findUniques(obj, key)
 {
@@ -92,19 +96,16 @@ const colors = ["#2e84bf", "#434348", "#d9534f", "#f7a35c", "#3b6aa0", "#f15c80"
 
 
 // Sorry for global variable pollution, world
-var barChartEvents = organizeByKey(srcJSON, 'eventType1', 'eventType2'),
-    barChartCategories = arrayFromKey(barChartEvents, 'name'),
-    barChartCounts = barChartInitData(arrayFromKey(barChartEvents, 'count')), 
-    originalcolors = Highcharts.getOptions().colors,
-    brightness,
-    chartA,
-    chartB;
+const barChartEvents = organizeByKey(srcJSON, 'eventType1', 'eventType2'),
+      barChartCategories = arrayFromKey(barChartEvents, 'name'),
+      barChartCounts = barChartInitData(arrayFromKey(barChartEvents, 'count')), 
+      originalcolors = Highcharts.getOptions().colors;
 let selectedEventType1 = barChartEvents[0];
 
 buildPieChart(selectedEventType1);
 buildShipSeverityData(selectedEventType1);
 buildLocationPieChart(selectedEventType1);
-
+buildContribFactorData(selectedEventType1);
 
 /////////////////////////////
 //     Chart Updater       //
@@ -117,13 +118,14 @@ function updateSubCharts(category) {
   buildPieChart(selectedEventType1); //, isUpdate);
   buildShipSeverityData(selectedEventType1);
   buildLocationPieChart(selectedEventType1);
+  buildContribFactorData(selectedEventType1);
 }
 
 //////////////////////////
 // Bar Chart (Chart A)  //
 //////////////////////////
 
-var chartA = Highcharts.chart('chart-a', { 
+const chartA = Highcharts.chart('chart-a', { 
   chart: {
     type: 'column', 
   },
@@ -170,7 +172,7 @@ var chartA = Highcharts.chart('chart-a', {
         updateSubCharts(event.point.category);
       }
     }
-   }]
+  }]
 
 });
 
@@ -197,7 +199,7 @@ function buildPieChart(selectedEventType1) //add update as third param if disabl
 
     // build tier 3 data (outer pie)
     for (let j = 0; j < pieEvents[i].subObjects.length; j++) {
-      brightness = 0.2 - (j / pieEvents[i].subObjects.length) / 5;
+      let brightness = 0.2 - (j / pieEvents[i].subObjects.length) / 5;
       et3Data.push({
         name: pieEvents[i].subObjects[j].name,
         y: round(pieEvents[i].subObjects[j].pct, 2),
@@ -472,6 +474,94 @@ function buildLocationPieChart(selectedEventType1)
         return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
           round(this.y,2) + '%' : null;
       }}
+    }]
+  });
+}
+
+/////////////////////////////////////
+// Chart F (Contributing Factors) ///
+/////////////////////////////////////
+
+function buildContribFactorData(selected)
+{
+  // console.log(selected);
+  const allFactors = [];
+  for(let i = 0; i < selected.data.length; i++)
+  {
+    if(!selected.data[i].contribFactors)
+    {
+      selected.data[i].contribFactors = ['No Contributing Factors Reported'];
+    }
+    for(let j = 0; j < selected.data[i].contribFactors.length; j++)
+    {
+     
+      // const filteredFactors = allFactors.filter(function(elem) {
+      //   return elem[name] === selected.data[i].contribFactors[j];
+      // });
+
+      const inx = allFactors.findIndex(function(elem){
+        return elem.name == selected.data[i].contribFactors[j];
+      });
+
+      if(inx < 0)
+      {
+        allFactors.push({
+          name: selected.data[i].contribFactors[j],
+          x: 1
+        });
+      } else //factor already exists
+      {
+        allFactors[inx].x += 1;
+      }
+    }
+  }
+  allFactors.sort(function(a, b) {
+    return b.x - a.x; //descending
+  });
+  // console.log(allFactors);
+
+  const chartF = Highcharts.chart('chart-f',{
+    chart: {
+      type: 'bar'
+    },
+    title: {
+      text: 'Contributing factors for ' + selected.name + ' events'
+    },
+    colors: colors,
+    xAxis: {
+      categories: arrayFromKey(allFactors,'name'),
+      title: {
+        text:null
+      }
+    },
+    yAxis: {
+      min: 0,
+      title: {
+        text: 'Occurrences',
+        align: 'high'
+      },
+    },
+    plotOptions: {
+      bar: {
+        dataLabels: {
+          enabled: true
+        }
+      }
+    },
+    legend: {
+      enabled: false
+    },
+    credits: {
+      enabled: false
+    },
+    navigation: {
+      buttonOptions: {
+        enabled: false
+      }
+    },
+    series: [{
+      name: 'Contributing Factors',
+      data: arrayFromKey(allFactors,'x')
     }]
   });
 }
