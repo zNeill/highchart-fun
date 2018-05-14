@@ -69,18 +69,33 @@ function arrayFromKey(obj,key)
   return newArray;
 }
 
+//prepareBarChartInitData
+function barChartInitData(currentArr) {
+  const result = [];
+  for(let i = 0; i < currentArr.length; i++)
+  {
+    let colour = (i == 0 ? colors[2] : colors[0]);
+    result.push({
+      y: currentArr[i],
+      color: colour
+    })
+  }
+  return result;
+}
 
 /////////////////////////////
 // "Main" (if this were C) //
 /////////////////////////////
 
+//constants
+const colors = ["#2e84bf", "#434348", "#d9534f", "#f7a35c", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"];
+
 
 // Sorry for global variable pollution, world
 var barChartEvents = organizeByKey(srcJSON, 'eventType1', 'eventType2'),
     barChartCategories = arrayFromKey(barChartEvents, 'name'),
-    barChartCounts = arrayFromKey(barChartEvents, 'count'),
+    barChartCounts = barChartInitData(arrayFromKey(barChartEvents, 'count')), 
     originalcolors = Highcharts.getOptions().colors,
-    colors = ["#2e84bf", "#434348", "#d9534f", "#f7a35c", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"],
     brightness,
     chartA,
     chartB;
@@ -110,7 +125,7 @@ function updateSubCharts(category) {
 
 var chartA = Highcharts.chart('chart-a', { 
   chart: {
-    type: 'column'
+    type: 'column', 
   },
   colors: colors,
   title: {
@@ -143,16 +158,21 @@ var chartA = Highcharts.chart('chart-a', {
       borderWidth: 0
     }
   },
-  series:
-  [{
+  series: [{
     name: 'Events',
     data: barChartCounts,
     events: {
       click: function(event) {
+        for (let i = 0; i < this.data.length; i++) {
+          this.data[i].color = colors[0];
+        }
+        event.point.update({color: colors[2]}, true, true);
         updateSubCharts(event.point.category);
       }
     }
-  }]});
+   }]
+
+});
 
 ////////////////////////////
 //  Pie Chart (Chart B)   //
@@ -340,14 +360,14 @@ function buildShipSeverityData(selectedEventType1) // , update)
     xAxis: {
       categories: shipList
     },
-    colors: ["#2e84bf",  "#f7a35c", "#d9534f", "#434348", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"],
+    colors: ["#2e84bf",  "#c9db2d", "#ff9806", "#fd2e05", "#434348", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"],
     yAxis: {
       min: 0,
       title: {
         text: 'Total number of events'
       },
       stackLabels: {
-        enabled: true,
+        enabled: false,
         style: {
           fontWeight: 'bold',
           color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
@@ -377,15 +397,12 @@ function buildShipSeverityData(selectedEventType1) // , update)
     },
     tooltip: {
       headerFormat: '<b>{point.x}</b><br/>',
-      pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}'
+      pointFormat: 'Severity: <em>{point.series.name}</em>: {point.y}'
     },
     plotOptions: {
       column: {
-        stacking: 'normal',
-        dataLabels: {
-          enabled: true,
-          color: (Highcharts.theme && Highcharts.theme.dataLabelsColor) || 'white'
-        }
+        pointPadding: 0.2,
+        borderWidth: 0
       }
     },
     series: chartSeries
@@ -432,9 +449,9 @@ function buildLocationPieChart(selectedEventType1)
         allowPointSelect: true,
         cursor: 'pointer',
         dataLabels: {
-          enabled: false
+          enabled: true
         },
-        showInLegend: true
+        showInLegend: false
       }
     },
     colors: colors,
@@ -447,9 +464,14 @@ function buildLocationPieChart(selectedEventType1)
       enabled: false
     },
     series: [{
-      name: 'Brands',
+      name: 'Locations',
       colorByPoint: true,
-      data: chartSeries
+      data: chartSeries,
+      dataLabels: {formatter: function () {
+        // display only if larger than 1
+        return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
+          round(this.y,2) + '%' : null;
+      }}
     }]
   });
 }
