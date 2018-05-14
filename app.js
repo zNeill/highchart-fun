@@ -5,6 +5,20 @@
 // array.prototype.findIndex
 // array.prototype.filter
 
+
+////////////////
+// globals    //
+////////////////
+
+const srcJSON = oldsrcJSON.filter(function(obj) {
+  return (obj.ship !== "MEIN SCHIFF" && obj.ship !== "MEIN SCHIFF 3" && obj.ship !== "MEIN SCHIFF 4" && obj.ship !== "MEIN SCHIFF 5"); 
+});
+
+const colors = ["#2e84bf", "#434348", "#d9534f", "#f7a35c", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"],
+      originalcolors = Highcharts.getOptions().colors;
+var barChartCategories,
+    barChartEvents;
+
 // Function for finding and counting unique values given an
 function findUniques(obj, key)
 {
@@ -18,8 +32,8 @@ function findUniques(obj, key)
 
 // rounding (shrug)
 function round(number, precision) {
-  var shift = function (number, precision) {
-    var numArray = ("" + number).split("e");
+  let shift = function (number, precision) {
+    let numArray = ("" + number).split("e");
     return +(numArray[0] + "e" + (numArray[1] ? (+numArray[1] + precision) : precision));
   };
   return shift(Math.round(shift(number, +precision)), -precision);
@@ -29,13 +43,13 @@ function round(number, precision) {
 /// Optional subkey MUST only exist within 
 function organizeByKey(obj,key,subkey)
 {
-  var newObjects = [];
-  var uArr = findUniques(obj,key);
-  var objsTotal = 0;
+  let newObjects = [];
+  let uArr = findUniques(obj,key);
+  let objsTotal = 0;
 
-  for(var i = 0; i < uArr.length; i++)
+  for(let i = 0; i < uArr.length; i++)
   {
-    var newObj = {};
+    let newObj = {};
     newObj.name = uArr[i];
     newObj.data = obj.filter(function(elem) {
       return elem[key] == uArr[i];
@@ -48,12 +62,12 @@ function organizeByKey(obj,key,subkey)
     return b.count - a.count; //descending
   });
 
-  for(var i = 0; i < newObjects.length; i++)
+  for(let i = 0; i < newObjects.length; i++)
   {
     newObjects[i].pct = (newObjects[i].count / objsTotal) * 100; //pie chart adjustment
     if(subkey) {
       newObjects[i].subObjects = organizeByKey(newObjects[i].data,subkey);
-      for(var j = 0; j < newObjects[i].subObjects.length; j++)
+      for(let j = 0; j < newObjects[i].subObjects.length; j++)
       {
         newObjects[i].subObjects[j].pct = (newObjects[i].subObjects[j].count / objsTotal) * 100;
       }
@@ -65,8 +79,8 @@ function organizeByKey(obj,key,subkey)
 // Returns 1D array for given property
 function arrayFromKey(obj,key)
 {
-  var newArray = [];
-  for(var i = 0; i < obj.length; i++)
+  let newArray = [];
+  for(let i = 0; i < obj.length; i++)
   {
     newArray.push(obj[i][key]);
   }
@@ -87,104 +101,113 @@ function barChartInitData(currentArr) {
   return result;
 }
 
-/////////////////////////////
-// "Main" (if this were C) //
-/////////////////////////////
+////////////////////
+// "Main"  C ftw! //
+////////////////////
 
-//constants
-const colors = ["#2e84bf", "#434348", "#d9534f", "#f7a35c", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"];
-
-
-// Sorry for global variable pollution, world
-const barChartEvents = organizeByKey(srcJSON, 'eventType1', 'eventType2'),
-      barChartCategories = arrayFromKey(barChartEvents, 'name'),
-      barChartCounts = barChartInitData(arrayFromKey(barChartEvents, 'count')), 
-      originalcolors = Highcharts.getOptions().colors;
-let selectedEventType1 = barChartEvents[0];
-
-buildPieChart(selectedEventType1);
-buildShipSeverityData(selectedEventType1);
-buildLocationPieChart(selectedEventType1);
-buildContribFactorData(selectedEventType1);
+function main() {
+  barChartEvents = organizeByKey(srcJSON, 'eventType1', 'eventType2');
+  let initEventType1 = barChartEvents[0];
+  buildChartA(barChartEvents);
+  buildPieChart(initEventType1);
+  buildShipSeverityData(initEventType1);
+  buildLocationPieChart(initEventType1);
+  buildRootCauseChart(initEventType1);
+  buildContribFactorChart(initEventType1);
+}
 
 /////////////////////////////
 //     Chart Updater       //
 /////////////////////////////
 
 function updateSubCharts(category) {
-  var ix = barChartCategories.indexOf(category);
-  selectedEventType1 = barChartEvents[ix];
+  let ix = barChartCategories.indexOf(category);
+  let selectedEventType1 = barChartEvents[ix];
   // let isUpdate = true;
   buildPieChart(selectedEventType1); //, isUpdate);
   buildShipSeverityData(selectedEventType1);
   buildLocationPieChart(selectedEventType1);
-  buildContribFactorData(selectedEventType1);
+  buildContribFactorChart(selectedEventType1);
+  buildRootCauseChart(selectedEventType1);
 }
 
 //////////////////////////
 // Bar Chart (Chart A)  //
 //////////////////////////
-
-const chartA = Highcharts.chart('chart-a', { 
-  chart: {
-    type: 'column', 
-  },
-  colors: colors,
-  title: {
-    text: 'Event Types'
-  },
-  subtitle: {
-    text: 'Click on a data point to see detail in subsequent charts'
-  },
-  xAxis: {
-    categories: barChartCategories,
-    crosshair: true
-  },
-  yAxis: {
-    min: 0,
+function buildChartA(barChartEvents)
+{
+  
+  barChartCategories = arrayFromKey(barChartEvents, 'name');
+  let barChartCounts = barChartInitData(arrayFromKey(barChartEvents, 'count'));
+  const chartA = Highcharts.chart('chart-a', { 
+    chart: {
+      type: 'column', 
+    },
+    colors: colors,
     title: {
-      text: 'Number of Events'
-    }
-  },
-  credits: {
-    enabled: false
-  },
-  navigation: {
-    buttonOptions: {
-      enabled: false
-    }
-  },
-  plotOptions: {
-    column: {
-      pointPadding: 0.2,
-      borderWidth: 0
-    }
-  },
-  series: [{
-    name: 'Events',
-    data: barChartCounts,
-    events: {
-      click: function(event) {
-        for (let i = 0; i < this.data.length; i++) {
-          this.data[i].color = colors[0];
-        }
-        event.point.update({color: colors[2]}, true, true);
-        updateSubCharts(event.point.category);
+      text: 'Event Types'
+    },
+    subtitle: {
+      text: 'Click on a data point to see detail in subsequent charts'
+    },
+    xAxis: {
+      categories: barChartCategories,
+      crosshair: true
+    },
+    yAxis: {
+      min: 0,
+      title: {
+        enabled: false
       }
-    }
-  }]
+    },
+    credits: {
+      enabled: false
+    },
+    navigation: {
+      buttonOptions: {
+        enabled: false
+      }
+    },
+    plotOptions: {
+      column: {
+        pointPadding: 0.2,
+        borderWidth: 0
+      }
+    },
+    legend: {
+      enabled: false
+    },
+    tooltip: {
+      enabled: false
+    },
+    series: [{
+      name: 'Events',
+      data: barChartCounts,
+      events: {
+        click: function(event) {
+          for (let i = 0; i < this.data.length; i++) {
+            this.data[i].color = colors[0];
+          }
+          event.point.update({color: colors[2]}, true, true);
+          updateSubCharts(event.point.category);
+        }
+      },
+      dataLabels: {
+        enabled: true
+      }
+    }]
 
-});
-
+  });
+}
 ////////////////////////////
 //  Pie Chart (Chart B)   //
 ////////////////////////////
 
 
-function buildPieChart(selectedEventType1) //add update as third param if disabling always-animate
+function buildPieChart(selected) //add update as third param if disabling always-animate
 {
-  pieEvents = organizeByKey(selectedEventType1.data, 'eventType2', 'eventType3');
-  let pieTitle = 'Types of ' + selectedEventType1.name + ' events';
+  pieEvents = organizeByKey(selected.data, 'eventType2', 'eventType3');
+  let pieTitle = 'Types of ' + selected.name + ' events';
   let et2Data = [];
   let et3Data = [];
   // Build the data arrays
@@ -237,30 +260,30 @@ function buildPieChart(selectedEventType1) //add update as third param if disabl
       enabled: false
     },
     tooltip: {
-      valueSuffix: '%'
+      enabled: false
     },
     series: [{
-      name: 'Event Type 2',
+      name: 'Event SubType',
       data: et2Data,
       size: '60%',
       dataLabels: {
         formatter: function () {
-          return this.y > 5 ? this.point.name : null;
+          return this.y > 5 ? this.point.name + ': ' + this.y + '%' : null;
         },
-        color: '#ffffff',
-        distance: -30
+        distance: -20
       }
     }, {
-      name: 'Event Type 3',
+      name: 'Event Sub-SubType',
       data: et3Data,
       size: '80%',
       innerSize: '60%',
       dataLabels: {
         formatter: function () {
           // display only if larger than 1
-          return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
+          return this.y > 1.6 ? '<b>' + this.point.name + ':</b> ' +
             this.y + '%' : null;
-        }
+        },
+        distance: 50
       },
       id: 'versions'
     }],
@@ -332,13 +355,19 @@ function buildShipSeverityData(selectedEventType1) // , update)
   // console.info(byShip);
 
   //itierate through levels to build the series
-  for(var i = 0; i < sLevels.length; i++)
+  for(let i = 0; i < sLevels.length; i++)
   {
     chartSeries.push({
       name: sLevels[i],
-      data: []
+      data: [],
+      dataLabels: {
+        formatter: function() {
+          //TODO Fix this
+          return (this.y > 0 ? this.y : null);
+        }
+      }
     });
-    for(var j = 0; j < byShip.length; j++)
+    for(let j = 0; j < byShip.length; j++)
     {
       let currentShip = byShip[j].name;
       // console.log('i is ' + i + '\n j is ' + j + '\n current level is ' + sLevels[i] + '\n current ship is ' + currentShip + '\n objects of ship are: \n'); console.log(byShip[j].subObjects);
@@ -349,32 +378,23 @@ function buildShipSeverityData(selectedEventType1) // , update)
     } 
   }
 
-  var chartC = Highcharts.chart('chart-c', {
+  let chartC = Highcharts.chart('chart-c', {
     chart: {
       type: 'column'
     },
     title: {
       text: chartTitle
     },
-    subtitle: {
-      text: 'Click on legend to filter by severity'
-    },
     xAxis: {
       categories: shipList
     },
-    colors: ["#2e84bf",  "#c9db2d", "#ff9806", "#fd2e05", "#434348", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"],
+    colors: ["#444444",  "#AAAAAA", "#ff9806", "#fd2e05", "#434348", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"],
     yAxis: {
       min: 0,
       title: {
-        text: 'Total number of events'
+        enabled: false
       },
-      stackLabels: {
-        enabled: false,
-        style: {
-          fontWeight: 'bold',
-          color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
-        }
-      }
+      
     },
 
     navigation: {
@@ -398,13 +418,17 @@ function buildShipSeverityData(selectedEventType1) // , update)
       shadow: false
     },
     tooltip: {
-      headerFormat: '<b>{point.x}</b><br/>',
-      pointFormat: 'Severity: <em>{point.series.name}</em>: {point.y}'
+      enabled:false
+      // headerFormat: '<b>{point.x}</b><br/>',
+      // pointFormat: '{point.y} events with a severity level of <em>{point.series.name}</em>'
     },
     plotOptions: {
       column: {
         pointPadding: 0.2,
-        borderWidth: 0
+        borderWidth: 0,
+        dataLabels: {
+          enabled: true
+        }
       }
     },
     series: chartSeries
@@ -415,11 +439,11 @@ function buildShipSeverityData(selectedEventType1) // , update)
 // Chart D (Location Pie)    //
 ///////////////////////////////
 
-function buildLocationPieChart(selectedEventType1)
+function buildLocationPieChart(selected)
 {
-  let locationData = organizeByKey(selectedEventType1.data, 'eventLocation');
+  let locationData = organizeByKey(selected.data, 'eventLocation');
   let chartSeries = [];
-  let chartTitle = selectedEventType1.name + ' locations';
+  let chartTitle = selected.name + ' locations';
   for(let i = 0; i < locationData.length; i++)
   {
     chartSeries.push({
@@ -430,7 +454,7 @@ function buildLocationPieChart(selectedEventType1)
   chartSeries[0].sliced = true;
   chartSeries[0].selected = true;
 
-  var chartD = Highcharts.chart('chart-d', {
+  let chartD = Highcharts.chart('chart-d', {
     chart: {
       plotBackgroundColor: null,
       plotBorderWidth: null,
@@ -440,11 +464,9 @@ function buildLocationPieChart(selectedEventType1)
     title: {
       text: chartTitle
     },
-    subtitle: {
-      text: 'Click legend to enable/disable locations'
-    },
     tooltip: {
-      pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+      enabled: false
+      // pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
     },
     plotOptions: {
       pie: {
@@ -478,11 +500,96 @@ function buildLocationPieChart(selectedEventType1)
   });
 }
 
+/////////////////////////////
+// Chart E (Root Causes)   //
+/////////////////////////////
+
+function buildRootCauseChart(selected)
+{
+  let rcData = selected.data;
+
+  //append full name of cause to data
+  for(let i = 0; i < rcData.length; i++)
+  {
+    let thisCode = rcData[i].rootCode;
+    let rcix = causeCodes.findIndex(function(elem) {
+      return elem['code'] == thisCode;
+    });
+    if(rcix == -1) console.log(thisCode);
+    let codeFullName = causeCodes[rcix].rcname;
+    rcData[i].fullname = codeFullName;
+  }
+
+  let rcWithName = organizeByKey(rcData, 'fullname');
+  let rcTopTen = [];
+  for(let i = 0; i < Math.min(rcWithName.length, 10); i++)
+  {
+    rcTopTen.push(rcWithName[i]);
+  }
+  //console.log(rcTopTen);
+
+  const chartE = Highcharts.chart('chart-e',{
+    chart: {
+      type: 'bar'
+    },
+    title: {
+      text: 'Root Causes for ' + selected.name + ' events'
+    },
+    colors: colors,
+    xAxis: {
+      categories: arrayFromKey(rcTopTen,'name'),
+      title: {
+        text:null
+      }
+    },
+    yAxis: {
+      min: 0,
+      title: {
+        enabled:false
+      },
+    },
+    plotOptions: {
+      bar: {
+        dataLabels: {
+          enabled: true
+        }
+      }
+    },
+    tooltip: {
+      enabled: false
+      // formatter: function() {
+      //   let foundx = this.x;
+      //   let rcix = causeCodes.findIndex(function(elem) {
+      //     return elem['code'] == foundx;
+      //   });
+      //   // console.log(rcix);
+      //   let codeFullName = causeCodes[rcix].rcname;
+      //   return "<b>" + codeFullName + "</b>";
+      // }
+    },
+    legend: {
+      enabled: false
+    },
+    credits: {
+      enabled: false
+    },
+    navigation: {
+      buttonOptions: {
+        enabled: false
+      }
+    },
+    series: [{
+      name: 'Root Cause',
+      data: arrayFromKey(rcTopTen,'count')
+    }]
+  });
+
+}
 /////////////////////////////////////
 // Chart F (Contributing Factors) ///
 /////////////////////////////////////
 
-function buildContribFactorData(selected)
+function buildContribFactorChart(selected)
 {
   // console.log(selected);
   const allFactors = [];
@@ -494,12 +601,12 @@ function buildContribFactorData(selected)
     }
     for(let j = 0; j < selected.data[i].contribFactors.length; j++)
     {
-     
+      
       // const filteredFactors = allFactors.filter(function(elem) {
       //   return elem[name] === selected.data[i].contribFactors[j];
       // });
 
-      const inx = allFactors.findIndex(function(elem){
+      let inx = allFactors.findIndex(function(elem){
         return elem.name == selected.data[i].contribFactors[j];
       });
 
@@ -518,6 +625,12 @@ function buildContribFactorData(selected)
   allFactors.sort(function(a, b) {
     return b.x - a.x; //descending
   });
+  let topTenFactors = [];
+  for(let i = 0; i < Math.min(allFactors.length, 10); i++)
+  {
+    topTenFactors.push(allFactors[i]);
+  }
+  
   // console.log(allFactors);
 
   const chartF = Highcharts.chart('chart-f',{
@@ -525,21 +638,25 @@ function buildContribFactorData(selected)
       type: 'bar'
     },
     title: {
-      text: 'Contributing factors for ' + selected.name + ' events'
+      text: 'Top contributing factors for ' + selected.name + ' events'
     },
     colors: colors,
     xAxis: {
-      categories: arrayFromKey(allFactors,'name'),
+      categories: arrayFromKey(topTenFactors,'name'),
       title: {
-        text:null
+        text: null
       }
+    },
+    tooltip: {
+      enabled: false
+      // formatter: function() {
+      //   return '<b>'+ this.x + '</b> was a factor in ' + this.y + ' different ' + selected.name + '  events';      } 
     },
     yAxis: {
       min: 0,
       title: {
-        text: 'Occurrences',
-        align: 'high'
-      },
+        text: null
+      }
     },
     plotOptions: {
       bar: {
@@ -561,7 +678,13 @@ function buildContribFactorData(selected)
     },
     series: [{
       name: 'Contributing Factors',
-      data: arrayFromKey(allFactors,'x')
+      data: arrayFromKey(topTenFactors,'x')
     }]
   });
 }
+
+
+//////////////////
+// Initial Call //
+//////////////////
+main();
