@@ -1,6 +1,3 @@
-// Ensuring data.js in scope
-// console.log(srcJSON);
-
 // Polyfills needed if not using ES6+ browser
 // array.prototype.findIndex
 // array.prototype.filter
@@ -10,12 +7,13 @@
 // globals    //
 ////////////////
 
+//removing MEIN SCHIFF ships
 const srcJSON = oldsrcJSON.filter(function(obj) {
   return (obj.ship !== "MEIN SCHIFF" && obj.ship !== "MEIN SCHIFF 3" && obj.ship !== "MEIN SCHIFF 4" && obj.ship !== "MEIN SCHIFF 5"); 
 });
 
-const colors = ["#2e84bf", "#434348", "#d9534f", "#f7a35c", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"],
-      originalcolors = Highcharts.getOptions().colors;
+const colors = ["#2e84bf", "#434348", "#d9534f", "#f7a35c", "#3b6aa0", "#f15c80", "#e4d354", "#2b908f", "#f45b5b", "#91e8e1"];
+//superglobals, sorry world
 var barChartCategories,
     barChartEvents;
 
@@ -100,7 +98,14 @@ function barChartInitData(currentArr) {
   }
   return result;
 }
-
+//inArray (jquery emulation of php's in_array)
+function inArray(needle, haystack) {
+  var length = haystack.length;
+  for(var i = 0; i < length; i++) {
+    if(haystack[i] == needle) return true;
+  }
+  return false;
+}
 ////////////////////
 // "Main"  C ftw! //
 ////////////////////
@@ -303,40 +308,6 @@ function buildPieChart(selected) //add update as third param if disabling always
       }]
     }
   });
-  
-  // DISABLED FUNCTIONALITY FOR SMOOTH (NON ANIMATED) CHART UPDATE
-  // } else {
-  //   chartB.update({
-  //     title: {
-  //       text: pieTitle
-  //     },
-  //     series: [{
-  //       name: 'Event Type 2',
-  //       data: et2Data,
-  //       size: '60%',
-  //       dataLabels: {
-  //         formatter: function () {
-  //           return this.y > 5 ? this.point.name : null;
-  //         },
-  //         color: '#ffffff',
-  //         distance: -30
-  //       }
-  //     }, {
-  //       name: 'Event Type 3',
-  //       data: et3Data,
-  //       size: '80%',
-  //       innerSize: '60%',
-  //       dataLabels: {
-  //         formatter: function () {
-  //           // display only if larger than 1
-  //           return this.y > 1 ? '<b>' + this.point.name + ':</b> ' +
-  //             this.y + '%' : null;
-  //         }
-  //       },
-  //       id: 'versions'
-  //     }],
-  //   });
-  // }
 }
 
 
@@ -350,9 +321,26 @@ function buildShipSeverityData(selectedEventType1) // , update)
   let sLevels = findUniques(srcJSON, 'severity');
   let chartTitle = selectedEventType1.name + ' events by Ship';
   let chartSeries = [];
+  let blankShipIndexes = [];
   sLevels.sort();
   // console.log(sLevels);
   // console.info(byShip);
+
+
+  //prepare list of ships without events
+  let allShips = findUniques(srcJSON, 'ship');
+  allShips.sort(); //results in alpha sorting of blank ships
+  // console.log(allShips);
+  for(let i = 0; i < allShips.length; i++)
+  {
+    if(!(inArray(allShips[i],shipList)))
+    {
+      shipList.push(allShips[i]);
+      blankShipIndexes.push(i);
+    }
+  }
+  // console.log(shipList);
+  // console.log(blankShipIndexes);
 
   //itierate through levels to build the series
   for(let i = 0; i < sLevels.length; i++)
@@ -374,8 +362,13 @@ function buildShipSeverityData(selectedEventType1) // , update)
       let filteredSubObjects = byShip[j].subObjects.filter(function(elem) {
         return elem.name == sLevels[i];
       });
+      //add 0 if there's no event at current ship severity level
       chartSeries[i].data.push(filteredSubObjects[0] ? filteredSubObjects[0].count : 0);
-    } 
+    }
+    for(let j2 = 0; j2 < blankShipIndexes.length; j2++)
+    {
+      chartSeries[i].data.push(0);
+    }
   }
 
   let chartC = Highcharts.chart('chart-c', {
@@ -533,7 +526,7 @@ function buildRootCauseChart(selected)
       type: 'bar'
     },
     title: {
-      text: 'Root Causes for ' + selected.name + ' events'
+      text: 'Top root causes for ' + selected.name + ' events'
     },
     colors: colors,
     xAxis: {
