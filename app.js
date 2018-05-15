@@ -94,7 +94,7 @@ function barChartInitData(currentArr) {
     result.push({
       y: currentArr[i],
       color: colour
-    })
+    });
   }
   return result;
 }
